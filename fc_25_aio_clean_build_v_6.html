@@ -9,6 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.0/dist/tesseract.min.js"></script>
 <style>
   :root{--red:#da291c;--ink:#0b0b0d;--muted:#60646c;--bg:#f7f7f8;--card:#fff;--line:#e6e7ea}
   *{box-sizing:border-box}
@@ -305,10 +306,16 @@
         <button class="btn btn-primary" id="mlSave">Save to Log</button>
       </div>
 
+      <div class="controls-row" style="gap:8px;flex-wrap:wrap;margin-top:8px;">
+        <input id="mlPhotos" type="file" accept="image/*" multiple>
+        <button class="btn" id="mlOcrBtn" type="button">Parse Photos (OCR)</button>
+      </div>
+
       <!-- PLAYED -->
       <div id="mlPlayed">
         <div class="controls-row" style="gap:8px;flex-wrap:wrap;">
           <textarea id="mlScorers" rows="2" placeholder="Goal scorers (comma or one per line) — e.g., Bruno Fernandes 90', Rashford 54'"></textarea>
+          <textarea id="mlAssists" rows="2" placeholder="Assists (comma or one per line) — e.g., Eriksen 34', Mount 77'"></textarea>
           <textarea id="mlSubsIn" rows="2" placeholder="Subs IN — e.g., Højlund 70', Amrabat 80'"></textarea>
           <textarea id="mlSubsOut" rows="2" placeholder="Subs OUT — e.g., Casemiro 70', Mount 80'"></textarea>
           <textarea id="mlCards" rows="2" placeholder="Cards — e.g., Dalot (Y 34'), Martinez (R 77')"></textarea>
@@ -1298,6 +1305,7 @@ window.TRANSFER_CONFIG = transferBudget;
 
       if(mode==='played'){
         const scorers = mlParseList(document.getElementById('mlScorers')?.value);
+        const assists = mlParseList(document.getElementById('mlAssists')?.value);
         const subsIn  = mlParseList(document.getElementById('mlSubsIn')?.value);
         const subsOut = mlParseList(document.getElementById('mlSubsOut')?.value);
         const cards   = mlParseList(document.getElementById('mlCards')?.value);
@@ -1309,6 +1317,13 @@ window.TRANSFER_CONFIG = transferBudget;
           const player = m ? m[1].trim() : s;
           const minute = m ? m[2] : '';
           pushRow({player, pos:'', role:'', rating:7.4, goals:1, assists:0, keyEvent:'', eventMinute:minute, notes});
+        });
+        // assists → rows
+        assists.forEach(s=>{
+          const m = s.match(/(.+?)\s+(\d+)'?/);
+          const player = m ? m[1].trim() : s;
+          const minute = m ? m[2] : '';
+          pushRow({player, pos:'', role:'', rating:7.0, goals:0, assists:1, keyEvent:'', eventMinute:minute, notes});
         });
         // subs in/out as keyEvent rows
         subsIn.forEach(s=>{
@@ -1368,9 +1383,55 @@ window.TRANSFER_CONFIG = transferBudget;
       // commit
       const all = mlLoadEntries().concat(out);
       mlSaveEntries(all);
-      mlSetStatus(`Saved ${out.length} row(s). Total now: ${all.length}. Open Dashboard to view.`);
+  mlSetStatus(`Saved ${out.length} row(s). Total now: ${all.length}. Open Dashboard to view.`);
       try{ alert(`Logged ${out.length} row(s).`); }catch(e){}
     });
+  })();
+
+  // OCR helper for match photos
+  (function mlOcr(){
+    const input = document.getElementById('mlPhotos');
+    const btn = document.getElementById('mlOcrBtn');
+    if(!input || !btn || !window.Tesseract) return;
+    btn.addEventListener('click', async ()=>{
+      if(!input.files || !input.files.length){ mlSetStatus('No photos selected.'); return; }
+      mlSetStatus('Running OCR...');
+      try{
+        let fullText='';
+        for(const file of input.files){
+          const result = await Tesseract.recognize(file, 'eng');
+          fullText += '\n' + (result.data && result.data.text || '');
+        }
+        const {scorers, assists, result, cleanSheet} = mlOcrParse(fullText);
+        if(result) document.getElementById('mlResult').value = result;
+        if(scorers.length) document.getElementById('mlScorers').value = scorers.join('\n');
+        if(assists.length) document.getElementById('mlAssists').value = assists.join('\n');
+        if(cleanSheet){
+          const notesEl = document.getElementById('mlNotes');
+          notesEl.value = (notesEl.value? notesEl.value + ' ' : '') + 'Clean sheet';
+        }
+        mlSetStatus('OCR parsing complete.');
+      }catch(e){
+        mlSetStatus('OCR failed.');
+        try{ console.error(e); }catch(_){ }
+      }
+    });
+
+    function mlOcrParse(text){
+      const lines = String(text||'').split(/\n+/).map(l=>l.trim()).filter(Boolean);
+      const scorers=[]; const assists=[]; let result=''; let cleanSheet=false;
+      for(const line of lines){
+        if(!result){
+          const m=line.match(/(\d+)\s*[-:]\s*(\d+)/);
+          if(m){ result=`${m[1]}-${m[2]}`; if(m[2]==='0') cleanSheet=true; }
+        }
+        const g=line.match(/([A-Za-z\s\.]+)\s+(\d+)'/);
+        if(g) scorers.push(`${g[1].trim()} ${g[2]}'`);
+        const a=line.match(/assist[:\-]?\s*([A-Za-z\s\.]+)/i);
+        if(a) assists.push(a[1].trim());
+      }
+      return {scorers, assists, result, cleanSheet};
+    }
   })();
 
   // Data Rescue wiring
