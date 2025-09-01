@@ -1,0 +1,13 @@
+{
+  "name": "f25-cm-tracker-rsr",
+  "version": "1.0.0",
+  "description": "This is a single‑file web app to track FIFA/EA FC‑25 Career Mode data. It includes an Importer + Dashboard to visualize player performance, a Transfers panel with budget helpers, and a premium Weather widget (Open‑Meteo) for upcoming fixtures. Entries are stored in your browser (localStorage) and the dashboard reads from a robust, deduplicated store so you can log matches quickly and review form over time.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"No tests specified\" && exit 0"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
+}
