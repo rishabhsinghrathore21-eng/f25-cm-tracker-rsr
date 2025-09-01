@@ -1392,7 +1392,12 @@ window.TRANSFER_CONFIG = transferBudget;
   (function mlOcr(){
     const input = document.getElementById('mlPhotos');
     const btn = document.getElementById('mlOcrBtn');
-    if(!input || !btn || !window.Tesseract) return;
+    if(!input || !btn) return;
+    if(!window.Tesseract){
+      mlSetStatus('OCR library failed to load. Check your network or serve the page over HTTP.');
+      try{ console.warn('Tesseract library failed to load.'); }catch(e){}
+      return;
+    }
     btn.addEventListener('click', async ()=>{
       if(!input.files || !input.files.length){ mlSetStatus('No photos selected.'); return; }
       mlSetStatus('Running OCR...');
