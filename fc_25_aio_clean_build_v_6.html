@@ -82,6 +82,12 @@
   .remain-ok{color:#b6ffbf}
   .remain-warn{color:#ffd48c}
   .remain-bad{color:#ff9ca3}
+  .transfer-budget{background:linear-gradient(to bottom,#000,rgba(0,0,0,0));border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:16px;color:#fff}
+  .transfer-budget h3{margin:0 0 12px;font-family:'Barlow Condensed',system-ui;text-transform:uppercase;letter-spacing:.08em}
+  .t-budget-line{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.08)}
+  .t-budget-line:last-child{border-bottom:none}
+  .t-budget-progress{margin-top:12px;height:8px;background:#2a2a2a;border-radius:6px;overflow:hidden}
+  .t-budget-progress-used{height:100%;background:var(--red);width:0}
   .avatar.sm{width:24px;height:24px;border-radius:999px;object-fit:cover;margin-right:6px;vertical-align:middle}
   .avatar.sm.initials{display:inline-flex;align-items:center;justify-content:center;background:var(--red);color:#fff;font-size:12px;font-weight:600;text-transform:uppercase}
   /* Weather premium card */
@@ -481,6 +487,17 @@
       </div>
     </div>
 
+    <div class="row" style="margin-bottom:12px;">
+      <div class="col">
+        <div class="transfer-budget">
+          <h3>Transfer Budget</h3>
+          <div class="t-budget-line">Budget Remaining: <span id="tCfgBudgetRemain">$0M</span></div>
+          <div class="t-budget-line">Budget Used: <span id="tCfgBudgetUsed">$0M</span></div>
+          <div class="t-budget-progress"><div id="tCfgBudgetBar" class="t-budget-progress-used"></div></div>
+        </div>
+      </div>
+    </div>
+
     <div class="row">
       <div class="col">
         <div class="card widget" data-size="md">
@@ -495,9 +512,10 @@
         </div>
       </div>
     </div>
-  </section>
+</section>
 </main>
 
+<script src="src/config/transfers.js"></script>
 <script>
 (function(){
   'use strict';
@@ -1759,6 +1777,19 @@
     if(total){ if(remaining>=total*0.4) remainEl.classList.add('remain-ok'); else if(remaining>=total*0.15) remainEl.classList.add('remain-warn'); else remainEl.classList.add('remain-bad'); }
   }
 
+  function renderTransferBudgetSection(){
+    var cfg=window.TRANSFER_CONFIG||{};
+    var used=Number(cfg.budgetUsed)||0;
+    var remaining=Number(cfg.budgetRemaining)||0;
+    var total=used+remaining;
+    var rEl=document.getElementById('tCfgBudgetRemain');
+    var uEl=document.getElementById('tCfgBudgetUsed');
+    var bar=document.getElementById('tCfgBudgetBar');
+    if(rEl) rEl.textContent='$'+remaining+'M';
+    if(uEl) uEl.textContent='$'+used+'M';
+    if(bar) bar.style.width= total? (used/total*100)+'%':'0%';
+  }
+
   function renderRecentTransfers(transfers){
     var inBox=document.getElementById('tRecentIn'); var outBox=document.getElementById('tRecentOut'); if(!inBox||!outBox) return;
     var sorted = transfers.slice().sort(function(a,b){ return String(b.date||'').localeCompare(String(a.date||'')); });
@@ -1805,6 +1836,7 @@
       tSetStatus('Transfers in memory: '+t.length);
       renderBudget(t);
       renderRecentTransfers(t);
+      renderTransferBudgetSection();
     } catch(e) {
       console.error('[Transfers] render error:', e);
       tSetStatus('Transfers UI failed to render (see console).');

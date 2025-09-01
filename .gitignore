@@ -13,3 +13,6 @@ __pycache__/
 !README.md
 !LICENSE
 !.gitignore
+!src/
+!src/config/
+!src/config/transfers.js
