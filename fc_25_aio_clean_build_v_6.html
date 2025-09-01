@@ -10,7 +10,7 @@
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
-  :root{--red:#db0007;--ink:#0b0b0d;--muted:#60646c;--bg:#f7f7f8;--card:#fff;--line:#e6e7ea}
+  :root{--red:#da291c;--ink:#0b0b0d;--muted:#60646c;--bg:#f7f7f8;--card:#fff;--line:#e6e7ea}
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial}
   header{position:sticky;top:0;z-index:10;background:rgba(255,255,255,.95);backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}
@@ -88,6 +88,10 @@
   .t-budget-line:last-child{border-bottom:none}
   .t-budget-progress{margin-top:12px;height:8px;background:#2a2a2a;border-radius:6px;overflow:hidden}
   .t-budget-progress-used{height:100%;background:var(--red);width:0}
+  .t-budget-pct{text-align:right;margin-top:8px;font-weight:700}
+  .transfers-grid{display:grid;gap:16px}
+  .transfers-lists{display:grid;gap:16px}
+  @media(min-width:700px){.transfers-grid{grid-template-columns:1fr 1fr}}
   .avatar.sm{width:24px;height:24px;border-radius:999px;object-fit:cover;margin-right:6px;vertical-align:middle}
   .avatar.sm.initials{display:inline-flex;align-items:center;justify-content:center;background:var(--red);color:#fff;font-size:12px;font-weight:600;text-transform:uppercase}
   /* Weather premium card */
@@ -487,25 +491,19 @@
       </div>
     </div>
 
-    <div class="row" style="margin-bottom:12px;">
-      <div class="col">
-        <div class="transfer-budget">
-          <h3>Transfer Budget</h3>
-          <div class="t-budget-line">Budget Remaining: <span id="tCfgBudgetRemain">$0M</span></div>
-          <div class="t-budget-line">Budget Used: <span id="tCfgBudgetUsed">$0M</span></div>
-          <div class="t-budget-progress"><div id="tCfgBudgetBar" class="t-budget-progress-used"></div></div>
-        </div>
+    <div class="transfers-grid">
+      <div class="card transfer-budget">
+        <h3>Transfer Budget</h3>
+        <div class="t-budget-line">Budget Remaining: <span id="tCfgBudgetRemain">$0M</span></div>
+        <div class="t-budget-line">Budget Used: <span id="tCfgBudgetUsed">$0M</span></div>
+        <div class="t-budget-progress"><div id="tCfgBudgetBar" class="t-budget-progress-used" role="progressbar" aria-valuemin="0" aria-valuemax="100"></div></div>
+        <div class="t-budget-pct" id="tCfgBudgetPct">0%</div>
       </div>
-    </div>
-
-    <div class="row">
-      <div class="col">
+      <div class="transfers-lists">
         <div class="card widget" data-size="md">
           <h3>Recent Incoming</h3>
           <div id="tRecentIn" class="list-transfers"></div>
         </div>
-      </div>
-      <div class="col">
         <div class="card widget" data-size="md">
           <h3>Recent Outgoing</h3>
           <div id="tRecentOut" class="list-transfers"></div>
@@ -515,8 +513,9 @@
 </section>
 </main>
 
-<script src="src/config/transfers.js"></script>
-<script>
+<script type="module">
+import { transferBudget } from './src/config/transfers.js';
+window.TRANSFER_CONFIG = transferBudget;
 (function(){
   'use strict';
   /* ===== FC25 Entries Storage — Core Helpers (must come before anything else uses them) ===== */
@@ -1779,15 +1778,22 @@
 
   function renderTransferBudgetSection(){
     var cfg=window.TRANSFER_CONFIG||{};
-    var used=Number(cfg.budgetUsed)||0;
-    var remaining=Number(cfg.budgetRemaining)||0;
+    var used=Number(cfg.usedUSD)||0;
+    var remaining=Number(cfg.remainingUSD)||0;
     var total=used+remaining;
+    var pct = total? Math.round(used/total*100):0;
     var rEl=document.getElementById('tCfgBudgetRemain');
     var uEl=document.getElementById('tCfgBudgetUsed');
     var bar=document.getElementById('tCfgBudgetBar');
-    if(rEl) rEl.textContent='$'+remaining+'M';
-    if(uEl) uEl.textContent='$'+used+'M';
-    if(bar) bar.style.width= total? (used/total*100)+'%':'0%';
+    var pctEl=document.getElementById('tCfgBudgetPct');
+    if(rEl) rEl.textContent='$'+(remaining/1e6).toFixed(0)+'M';
+    if(uEl) uEl.textContent='$'+(used/1e6).toFixed(0)+'M';
+    if(pctEl) pctEl.textContent=pct+'%';
+    if(bar){
+      bar.style.width=pct+'%';
+      bar.setAttribute('aria-valuenow',String(pct));
+      bar.setAttribute('aria-label','Budget used '+pct+'%');
+    }
   }
 
   function renderRecentTransfers(transfers){

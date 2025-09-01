@@ -15,6 +15,9 @@ Highlights:
 
 Tip: All data saves locally in your browser (no backend). To move data between browsers, use the built‑in Rescue/Export.
 
+### Transfers Config
+The transfer budget card reads its values from `src/config/transfers.js`. Update `remainingUSD` and `usedUSD` there and the UI recomputes the percentage used via `used / (used + remaining)`.
+
 ## Codex Edits
 We use Codex (web) to propose and apply surgical edits. The app is designed so most features live inside the single HTML file; Codex can:
 - Patch UI/logic inside the main `<script>` safely (robust helpers are defined up front).
