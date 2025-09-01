@@ -16,3 +16,5 @@ __pycache__/
 !src/
 !src/config/
 !src/config/transfers.js
+!libs/
+!libs/tesseract.min.js

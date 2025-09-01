@@ -10,8 +10,9 @@ Highlights:
 
 ## Quick Start
 1. Clone or download this repository.
-2. Open `fc_25_aio_clean_build_v_6.html` directly in your browser (double‑click or drag‑drop into a tab).
-3. Use the Importer to load CSVs, or the 📸 Match Logger to add entries. Switch to the Dashboard tab to explore.
+2. Download `tesseract.min.js` from `https://cdn.jsdelivr.net/npm/tesseract.js@5.0.0/dist/tesseract.min.js` and place it in a `libs/` folder next to the HTML file. When deploying, ensure the `libs/` directory is served alongside the page.
+3. Open `fc_25_aio_clean_build_v_6.html` directly in your browser (double‑click or drag‑drop into a tab).
+4. Use the Importer to load CSVs, or the 📸 Match Logger to add entries. Switch to the Dashboard tab to explore.
 
 Tip: All data saves locally in your browser (no backend). To move data between browsers, use the built‑in Rescue/Export.
 
