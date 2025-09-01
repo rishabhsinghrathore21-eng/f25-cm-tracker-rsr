@@ -1,0 +1,15 @@
+# General
+.DS_Store
+*.log
+dist/
+build/
+node_modules/
+.env
+__pycache__/
+
+# Ignore everything else by default; whitelist app files
+*
+!fc_25_aio_clean_build_v_6.html
+!README.md
+!LICENSE
+!.gitignore
